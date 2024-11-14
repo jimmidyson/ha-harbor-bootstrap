@@ -1,0 +1,21 @@
+version: '3'
+
+vars:
+  CLOUDNATIVEPG_CHART_REPO: https://cloudnative-pg.github.io/charts
+  CLOUDNATIVEPG_VERSION:
+    sh: |
+      gh release list --repo cloudnative-pg/charts --json tagName \
+        --jq 'map(select(.tagName | startswith("cloudnative-pg-")))[0].tagName | ltrimstr("cloudnative-pg-v")'
+
+tasks:
+  deploy-operator:
+    cmds:
+      - cmd: |
+          helm upgrade --install cnpg cloudnative-pg \
+            --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' \
+            --version '{{.CLOUDNATIVEPG_VERSION}}' \
+            --namespace cnpg-system \
+            --create-namespace \
+            --wait --wait-for-jobs
+    status:
+      - "helm get metadata --namespace cnpg-system cnpg | grep -qi '^version: {{.CLOUDNATIVEPG_VERSION}}$'"

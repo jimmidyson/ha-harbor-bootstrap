@@ -1,0 +1,4 @@
+controllerManager:
+  manager:
+    image:
+      repository: ghcr.io/mesosphere/valkey-operator

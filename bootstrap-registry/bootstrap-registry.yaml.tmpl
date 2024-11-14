@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: kube-system
+  name: temporary-registry
+  labels:
+    app: in-cluster-registry
+    role: bootstrap
+spec:
+  tolerations:
+    - operator: Exists
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+  hostNetwork: true
+  initContainers:
+    - name: wait
+      image: ghcr.io/mesosphere/wait-for-file-to-exist:${LATEST_MINDTHEGAP_VERSION}
+      args:
+        - /registry-data/bundle.tar
+      volumeMounts:
+        - name: shared
+          mountPath: /registry-data
+  containers:
+    - name: registry
+      image: ghcr.io/mesosphere/mindthegap:${LATEST_MINDTHEGAP_VERSION}
+      args:
+        - serve
+        - bundle
+        - --bundle
+        - /registry-data/bundle.tar
+        - --listen-address
+        - "0.0.0.0"
+        - --listen-port
+        - "5000"
+      volumeMounts:
+        - name: shared
+          mountPath: /registry-data
+      ports:
+        - name: http
+          containerPort: 5000
+  restartPolicy: Never
+  volumes:
+    - name: shared
+      emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: registry
+spec:
+  selector:
+    app: in-cluster-registry
+  clusterIP: 10.96.0.20
+  ports:
+    - name: registry
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  name: registry-seeder
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: kube-system
+  name: registry-seeder
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    resourceNames:
+      - temporary-registry
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    resourceNames:
+      - temporary-registry
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: kube-system
+  name: registry-seeder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: registry-seeder
+subjects:
+  - kind: ServiceAccount
+    name: registry-seeder
+    namespace: kube-system
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: kube-system
+  name: copy-bundle-to-registry
+spec:
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      tolerations:
+        - operator: Exists
+      serviceAccountName: registry-seeder
+      restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+      hostNetwork: true
+      containers:
+        - name: copy
+          image: ghcr.io/mesosphere/copy-file-to-pod:${LATEST_MINDTHEGAP_VERSION}
+          args:
+            - --namespace
+            - kube-system
+            - --container
+            - wait
+            - /registry-data/bundle.tar
+            - temporary-registry:/registry-data/bundle.tar
+          volumeMounts:
+            - name: bundle
+              mountPath: /registry-data/bundle.tar
+      volumes:
+        - name: bundle
+          hostPath:
+            path: "/registry-data/bundle.tar"
+            type: File

@@ -1,0 +1,41 @@
+version: '3'
+
+set:
+  - errexit
+  - nounset
+  - pipefail
+
+includes:
+  kind: ./tasks/kind.yaml
+  registry: ./tasks/registry.yaml
+  cloudnativepg: ./tasks/cloudnativepg.yaml
+  valkey: ./tasks/valkey.yaml
+  certmanager: ./tasks/cert-manager.yaml
+  s3gw: ./tasks/s3gw.yaml
+
+vars:
+  GIT_REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+  GIT_REPO_NAME:
+    sh: basename {{.GIT_REPO_ROOT}}
+  KIND_CLUSTER_NAME: "{{.GIT_REPO_NAME}}"
+  LATEST_MINDTHEGAP_VERSION:
+    sh: gh release list --repo mesosphere/mindthegap --limit 1 --json name --jq '.[0].name'
+
+env:
+  KUBECONFIG:
+    sh: echo "$(git rev-parse --show-toplevel)/kubeconfig"
+
+tasks:
+  run-demo:
+    cmds:
+      - task: registry:create-bootstrap-image-bundle
+      - task: kind:create
+      - task: registry:deploy-bootstrap-registry
+      - task: certmanager:deploy
+      - task: cloudnativepg:deploy-operator
+      - task: valkey:deploy-operator
+      - task: s3gw:deploy
+  cleanup:
+    cmds:
+      - task: kind:delete

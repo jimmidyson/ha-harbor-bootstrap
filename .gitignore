@@ -1,0 +1,4 @@
+kubeconfig
+.task/
+bootstrap-registry/*.tar
+bootstrap-registry/*.txt

@@ -1,0 +1,24 @@
+version: '3'
+
+vars:
+  S3GW_CHART_REPO: https://s3gw-tech.github.io/s3gw-charts/
+  S3GW_VERSION:
+    sh: helm show chart --repo '{{.S3GW_CHART_REPO}}' s3gw | gojq --yaml-input -r '.version'
+  S3GW_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/s3gw.yaml"
+  COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL: github.com/kubernetes-sigs/container-object-storage-interface-controller
+
+tasks:
+  deploy:
+    cmds:
+      - cmd: kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-api
+      - cmd: kubectl create -k '{{.COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL}}'
+      - cmd: |
+          helm upgrade --install s3gw s3gw \
+            --repo '{{.S3GW_CHART_REPO}}' \
+            --version '{{.S3GW_VERSION}}' \
+            --namespace s3gw-system \
+            --create-namespace \
+            --wait --wait-for-jobs \
+            --values '{{.S3GW_VALUES_FILE}}'
+    status:
+      - "helm get metadata --namespace s3gw-system s3gw | grep -qi '^version: {{.S3GW_VERSION}}$'"

@@ -1,0 +1,39 @@
+version: '3'
+
+tasks:
+  create:
+    vars:
+      KIND_CONFIG_FILE_TEMPLATE: "{{.GIT_REPO_ROOT}}/kind/kind-config.yaml.tmpl"
+      MINDTHEGAP_IMAGES_FILE: "{{.GIT_REPO_ROOT}}/kind/mindthegap-images.txt"
+      KIND_CONFIG_FILE:
+        sh: mktemp
+    env:
+      LATEST_KIND_IMAGE_TAG:
+        sh: crane ls ghcr.io/mesosphere/kind-node | grep -v 64 | sort -rV | head -1
+      KIND_FILES_DIR: "{{.GIT_REPO_ROOT}}/kind"
+      BOOTSTRAP_REGISTRY_DIR: "{{.BOOTSTRAP_REGISTRY_DIR}}"
+      LATEST_MINDTHEGAP_VERSION: "{{.LATEST_MINDTHEGAP_VERSION}}"
+    cmds:
+      - cmd: envsubst -i '{{.KIND_CONFIG_FILE_TEMPLATE}}' -o '{{.KIND_CONFIG_FILE}}'
+      - defer: rm -f '{{.KIND_CONFIG_FILE}}'
+      - cmd: envsubst -i '{{.MINDTHEGAP_IMAGES_FILE}}.tmpl' -o '{{.MINDTHEGAP_IMAGES_FILE}}'
+      - defer: rm -f '{{.MINDTHEGAP_IMAGES_FILE}}'
+      - cmd: |
+          docker image build -t ghcr.io/mesosphere/kind-node:"${LATEST_KIND_IMAGE_TAG}"-with-mindthegap \
+            --build-arg MINDTHEGAP_VERSION='{{.LATEST_MINDTHEGAP_VERSION}}' \
+            --build-arg KIND_NODE_TAG="${LATEST_KIND_IMAGE_TAG}" \
+            -f "${KIND_FILES_DIR}/node-image.dockerfile" \
+            "${KIND_FILES_DIR}"
+      - cmd: kind create cluster --name '{{.KIND_CLUSTER_NAME}}' --config '{{.KIND_CONFIG_FILE}}'
+    status:
+      - kind get clusters | grep -q '^{{.KIND_CLUSTER_NAME}}$'
+    preconditions:
+      - sh: docker version -fjson | jq -e '.Server.Arch == "amd64"'
+        msg: "This task requires Docker to be installed and running on an amd64 architecture."
+  delete:
+    cmds:
+      - cmd: kind delete cluster --name '{{.KIND_CLUSTER_NAME}}'
+  kubeconfig:
+    silent: true
+    cmds:
+      - cmd: echo export KUBECONFIG={{.KUBECONFIG}}

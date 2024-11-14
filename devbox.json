@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.6/.schema/devbox.schema.json",
+  "packages": [
+    "bash@latest",
+    "clusterctl@latest",
+    "coreutils@latest",
+    "crane@latest",
+    "envsubst@latest",
+    "fd@latest",
+    "gh@latest",
+    "gnugrep@latest",
+    "gnused@latest",
+    "go-task@latest",
+    "gojq@latest",
+    "kind@latest",
+    "kustomize@latest",
+    "path:./hack/flakes#helm-with-plugins"
+  ]
+}
