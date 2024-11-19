@@ -1,5 +1,3 @@
-accessKey:
-secretKey:
 ingress:
   enabled: false
 publicDomain: s3gw-system.svc.cluster.local
@@ -7,3 +5,5 @@ cosi:
   enabled: true
   sidecar:
     imageTag: v0.23.0
+  driver:
+    name: s3gw.objectstorage.k8s.io

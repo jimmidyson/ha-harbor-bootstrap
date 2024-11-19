@@ -22,3 +22,9 @@ tasks:
             --values '{{.S3GW_VALUES_FILE}}'
     status:
       - "helm get metadata --namespace s3gw-system s3gw | grep -qi '^version: {{.S3GW_VERSION}}$'"
+  create-cosi-bucketclass:
+    cmds:
+      - cmd: kubectl apply --server-side -f '{{.GIT_REPO_ROOT}}/manifests/s3gw/bucketclass.yaml'
+    status:
+      - kubectl get bucketclass default-bcc
+      - kubectl get bucketaccessclass default-bac

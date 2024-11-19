@@ -38,6 +38,7 @@ tasks:
       - task: cloudnativepg:deploy-operator
       - task: valkey:deploy-operator
       - task: s3gw:deploy
+      - task: s3gw:create-cosi-bucketclass
   cleanup:
     cmds:
       - task: kind:delete
