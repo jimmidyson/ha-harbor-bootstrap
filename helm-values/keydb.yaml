@@ -6,6 +6,7 @@ tls:
       existingIssuer: harbor-ca-issuer
       existingIssuerKind: Issuer
 master:
+  replicaCount: 3
   livenessProbe:
     initialDelaySeconds: 0
   readinessProbe:
@@ -16,6 +17,8 @@ master:
     initialDelaySeconds: 0
     failureThreshold: 30
 replica:
+  replicaCount: 3
+  activeReplica: true
   livenessProbe:
     initialDelaySeconds: 0
     timeoutSeconds: 11
