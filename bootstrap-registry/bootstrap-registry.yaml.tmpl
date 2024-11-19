@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  namespace: kube-system
+  namespace: "${REGISTRY_NAMESPACE}"
   name: temporary-registry
   labels:
     app: in-cluster-registry
@@ -51,8 +51,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: kube-system
-  name: registry
+  namespace: "${REGISTRY_NAMESPACE}"
+  name: ncr
 spec:
   selector:
     app: in-cluster-registry
@@ -65,13 +65,13 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: kube-system
+  namespace: "${REGISTRY_NAMESPACE}"
   name: registry-seeder
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: kube-system
+  namespace: "${REGISTRY_NAMESPACE}"
   name: registry-seeder
 rules:
   - apiGroups:
@@ -94,7 +94,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  namespace: kube-system
+  namespace: "${REGISTRY_NAMESPACE}"
   name: registry-seeder
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -103,12 +103,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: registry-seeder
-    namespace: kube-system
+    namespace: "${REGISTRY_NAMESPACE}"
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: kube-system
+  namespace: "${REGISTRY_NAMESPACE}"
   name: copy-bundle-to-registry
 spec:
   ttlSecondsAfterFinished: 10
@@ -131,7 +131,7 @@ spec:
           image: ghcr.io/mesosphere/copy-file-to-pod:${LATEST_MINDTHEGAP_VERSION}
           args:
             - --namespace
-            - kube-system
+            - "${REGISTRY_NAMESPACE}"
             - --container
             - wait
             - /registry-data/bundle.tar

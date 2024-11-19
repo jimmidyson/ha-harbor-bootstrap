@@ -6,6 +6,12 @@ vars:
   BOOTSTRAP_REGISTRY_IMAGES_BUNDLE: "{{.BOOTSTRAP_REGISTRY_DIR}}/bootstrap-images.tar"
 
 tasks:
+  create-namespace:
+    cmds:
+      - cmd: kubectl create namespace '{{.REGISTRY_NAMESPACE}}'
+    status:
+      - kubectl get namespace '{{.REGISTRY_NAMESPACE}}'
+
   create-bootstrap-image-bundle:
     cmds:
       - cmd: helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg --chart-version='{{.CLOUDNATIVEPG_VERSION}}' >'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
@@ -38,9 +44,10 @@ tasks:
     env:
       LATEST_MINDTHEGAP_VERSION: "{{.LATEST_MINDTHEGAP_VERSION}}"
     cmds:
+      - task: create-namespace
       - cmd: envsubst -i '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST}}.tmpl' -o '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST}}'
       - defer: rm -f '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST}}'
-      - cmd: kubectl apply --server-side --namespace=kube-system -f '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST}}'
-      - cmd: kubectl wait --for=condition=Ready pod --namespace=kube-system -l app=in-cluster-registry,role=bootstrap --timeout=1m
+      - cmd: kubectl apply --server-side --namespace='{{.REGISTRY_NAMESPACE}}' -f '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST}}'
+      - cmd: kubectl wait --for=condition=Ready pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap --timeout=5m
     status:
-      - kubectl get pod --namespace=kube-system -l app=in-cluster-registry,role=bootstrap | grep -q 'Running'
+      - kubectl get pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap | grep -q 'Running'

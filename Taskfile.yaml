@@ -21,10 +21,12 @@ vars:
   KIND_CLUSTER_NAME: "{{.GIT_REPO_NAME}}"
   LATEST_MINDTHEGAP_VERSION:
     sh: gh release list --repo mesosphere/mindthegap --limit 1 --json name --jq '.[0].name'
+  REGISTRY_NAMESPACE: ncr-system
 
 env:
   KUBECONFIG:
     sh: echo "$(git rev-parse --show-toplevel)/kubeconfig"
+  REGISTRY_NAMESPACE: "{{.REGISTRY_NAMESPACE}}"
 
 tasks:
   run-demo:
