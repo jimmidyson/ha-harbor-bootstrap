@@ -9,9 +9,9 @@ includes:
   kind: ./tasks/kind.yaml
   registry: ./tasks/registry.yaml
   cloudnativepg: ./tasks/cloudnativepg.yaml
-  valkey: ./tasks/valkey.yaml
   cert-manager: ./tasks/cert-manager.yaml
   s3gw: ./tasks/s3gw.yaml
+  harbor: ./tasks/harbor.yaml
 
 vars:
   GIT_REPO_ROOT:
@@ -39,6 +39,7 @@ tasks:
       - task: valkey:deploy-operator
       - task: s3gw:deploy
       - task: s3gw:create-cosi-bucketclass
+      - task: harbor:create-s3-bucket
   cleanup:
     cmds:
       - task: kind:delete

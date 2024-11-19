@@ -1,0 +1,20 @@
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketClaim
+metadata:
+  namespace: ${REGISTRY_NAMESPACE}
+  name: harbor-bc
+spec:
+  bucketClassName: default-bcc
+  protocols:
+    - s3
+---
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketAccess
+metadata:
+  namespace: ${REGISTRY_NAMESPACE}
+  name: harbor-ba
+spec:
+  bucketAccessClassName: default-bac
+  bucketClaimName: harbor-bc
+  credentialsSecretName: harbor-s3-secret
+  protocol: s3
