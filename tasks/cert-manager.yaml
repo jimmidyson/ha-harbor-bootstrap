@@ -3,7 +3,7 @@ version: '3'
 vars:
   CERTMANAGER_CHART_REPO: https://charts.jetstack.io
   CERTMANAGER_VERSION:
-    sh: gh release list --repo cert-manager/cert-manager --limit 1 --json tagName --jq '.[0].tagName'
+    sh: helm show chart --repo '{{.CERTMANAGER_CHART_REPO}}' cert-manager | gojq --yaml-input -r '.version'
   CERTMANAGER_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/cert-manager.yaml"
 
 tasks:
