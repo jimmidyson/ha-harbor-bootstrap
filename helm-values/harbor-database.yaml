@@ -1,0 +1,10 @@
+type: postgresql
+mode: standalone
+cluster:
+  instances: 3
+  storage:
+    size: 1Gi
+  initdb:
+    database: harbor
+backups:
+  enabled: false

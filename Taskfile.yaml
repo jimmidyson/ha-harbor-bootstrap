@@ -41,6 +41,7 @@ tasks:
       - task: harbor:create-s3-bucket
       - task: harbor:create-ca
       - task: harbor:create-redis-cluster
+      - task: harbor:create-postgresql-cluster
   cleanup:
     cmds:
       - task: kind:delete

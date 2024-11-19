@@ -2,8 +2,10 @@ version: '3'
 
 vars:
   CLOUDNATIVEPG_CHART_REPO: https://cloudnative-pg.github.io/charts
-  CLOUDNATIVEPG_VERSION:
+  CLOUDNATIVEPG_CHART_VERSION:
     sh: helm show chart --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg | gojq --yaml-input -r '.version'
+  CLOUDNATIVEPG_CLUSTER_CHART_VERSION:
+    sh: helm show chart --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cluster | gojq --yaml-input -r '.version'
 
 tasks:
   deploy-operator:
@@ -11,9 +13,9 @@ tasks:
       - cmd: |
           helm upgrade --install cnpg cloudnative-pg \
             --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' \
-            --version '{{.CLOUDNATIVEPG_VERSION}}' \
+            --version '{{.CLOUDNATIVEPG_CHART_VERSION}}' \
             --namespace cnpg-system \
             --create-namespace \
             --wait --wait-for-jobs
     status:
-      - "helm get metadata --namespace cnpg-system cnpg | grep -qi '^version: {{.CLOUDNATIVEPG_VERSION}}$'"
+      - "helm get metadata --namespace cnpg-system cnpg | grep -qi '^version: {{.CLOUDNATIVEPG_CHART_VERSION}}$'"

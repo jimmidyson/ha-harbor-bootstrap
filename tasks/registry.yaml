@@ -14,7 +14,13 @@ tasks:
 
   create-bootstrap-image-bundle:
     cmds:
-      - cmd: helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg --chart-version='{{.CLOUDNATIVEPG_VERSION}}' >'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg --chart-version='{{.CLOUDNATIVEPG_CHART_VERSION}}' \
+            >'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cluster --chart-version='{{.CLOUDNATIVEPG_CLUSTER_CHART_VERSION}}' \
+            --values '{{.HARBOR_DATABASE_VALUES_FILE}}' \
+            --extra-images-file '{{.CLOUDNATIVEPG_CLUSTER_CHART_EXTRA_IMAGES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: |
           helm list-images 'oci://{{.REDIS_CHART_OCI_URL}}' --chart-version='{{.REDIS_CHART_VERSION}}' \
             --values '{{.REDIS_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
