@@ -10,7 +10,7 @@ includes:
   registry: ./tasks/registry.yaml
   cloudnativepg: ./tasks/cloudnativepg.yaml
   valkey: ./tasks/valkey.yaml
-  certmanager: ./tasks/cert-manager.yaml
+  cert-manager: ./tasks/cert-manager.yaml
   s3gw: ./tasks/s3gw.yaml
 
 vars:
@@ -32,7 +32,7 @@ tasks:
       - task: registry:create-bootstrap-image-bundle
       - task: kind:create
       - task: registry:deploy-bootstrap-registry
-      - task: certmanager:deploy
+      - task: cert-manager:deploy
       - task: cloudnativepg:deploy-operator
       - task: valkey:deploy-operator
       - task: s3gw:deploy
