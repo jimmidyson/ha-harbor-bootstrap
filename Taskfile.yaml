@@ -36,11 +36,11 @@ tasks:
       - task: registry:deploy-bootstrap-registry
       - task: cert-manager:deploy
       - task: cloudnativepg:deploy-operator
-      - task: valkey:deploy-operator
       - task: s3gw:deploy
       - task: s3gw:create-cosi-bucketclass
       - task: harbor:create-s3-bucket
       - task: harbor:create-ca
+      - task: harbor:create-redis-cluster
   cleanup:
     cmds:
       - task: kind:delete

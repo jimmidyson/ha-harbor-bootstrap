@@ -1,5 +1,11 @@
 version: '3'
 
+vars:
+  REDIS_CHART_OCI_URL: registry-1.docker.io/bitnamicharts/keydb
+  REDIS_CHART_VERSION:
+    sh: crane ls '{{.REDIS_CHART_OCI_URL}}' --omit-digest-tags | sort -rV | head -n1
+  REDIS_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/keydb.yaml"
+
 tasks:
   create-s3-bucket:
     cmds:
@@ -13,3 +19,15 @@ tasks:
       - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/cert-issuer.yaml.tmpl' | kubectl apply --server-side -f -
     status:
       - kubectl get issuer -n '{{.REGISTRY_NAMESPACE}}' harbor-ca-issuer
+  create-redis-cluster:
+    cmds:
+      - task: create-ca
+      - cmd: |
+          helm upgrade --install harbor-keydb 'oci://{{.REDIS_CHART_OCI_URL}}' \
+            --version '{{.REDIS_CHART_VERSION}}' \
+            --values '{{.REDIS_VALUES_FILE}}' \
+            --namespace '{{.REGISTRY_NAMESPACE}}' \
+            --create-namespace \
+            --wait --wait-for-jobs
+    status:
+      - "helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb | grep -qi '^version: {{.REDIS_CHART_VERSION}}$'"

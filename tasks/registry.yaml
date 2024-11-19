@@ -16,8 +16,8 @@ tasks:
     cmds:
       - cmd: helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg --chart-version='{{.CLOUDNATIVEPG_VERSION}}' >'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: |
-          helm list-images '{{.VALKEY_CHART_OCI_URL}}' --chart-version='{{.VALKEY_VERSION}}-chart' \
-            --values '{{.VALKEY_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+          helm list-images 'oci://{{.REDIS_CHART_OCI_URL}}' --chart-version='{{.REDIS_CHART_VERSION}}' \
+            --values '{{.REDIS_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: helm list-images --repo '{{.CERTMANAGER_CHART_REPO}}' cert-manager --chart-version='{{.CERTMANAGER_VERSION}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: |
           helm list-images --repo '{{.S3GW_CHART_REPO}}' s3gw --chart-version='{{.S3GW_VERSION}}' \
