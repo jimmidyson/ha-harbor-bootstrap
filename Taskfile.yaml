@@ -40,6 +40,7 @@ tasks:
       - task: s3gw:deploy
       - task: s3gw:create-cosi-bucketclass
       - task: harbor:create-s3-bucket
+      - task: harbor:create-ca
   cleanup:
     cmds:
       - task: kind:delete

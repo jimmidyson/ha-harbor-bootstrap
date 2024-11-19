@@ -7,3 +7,9 @@ tasks:
     status:
       - kubectl get bucketclaim -n '{{.REGISTRY_NAMESPACE}}' harbor-bc
       - kubectl get bucketaccess -n '{{.REGISTRY_NAMESPACE}}' harbor-ba
+  create-ca:
+    run: once
+    cmds:
+      - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/cert-issuer.yaml.tmpl' | kubectl apply --server-side -f -
+    status:
+      - kubectl get issuer -n '{{.REGISTRY_NAMESPACE}}' harbor-ca-issuer

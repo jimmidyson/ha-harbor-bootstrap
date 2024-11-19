@@ -1,0 +1,33 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: "${REGISTRY_NAMESPACE}"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ncr-ca
+  namespace: "${REGISTRY_NAMESPACE}"
+spec:
+  isCA: true
+  commonName: harbor-ca
+  secretName: harbor-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: harbor-ca-issuer
+  namespace: "${REGISTRY_NAMESPACE}"
+spec:
+  ca:
+    secretName: harbor-ca-secret
