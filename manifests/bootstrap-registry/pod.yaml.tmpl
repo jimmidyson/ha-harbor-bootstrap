@@ -37,13 +37,15 @@ spec:
         - --listen-address
         - "0.0.0.0"
         - --listen-port
-        - "5000"
+        - "8080"
+        - --repositories-prefix
+        - /library/
       volumeMounts:
         - name: shared
           mountPath: /registry-data
       ports:
         - name: http
-          containerPort: 5000
+          containerPort: 8080
       readinessProbe:
         tcpSocket:
           port: http
@@ -63,4 +65,4 @@ spec:
   ports:
     - name: registry
       port: 80
-      targetPort: http
+      targetPort: 8080

@@ -103,3 +103,10 @@ tasks:
                                    --to-registry http://harbor:80/library \
                                    --to-registry-username admin \
                                    --to-registry-password '{{.HARBOR_ADMIN_PASSWORD}}'
+
+  switch-to-harbor:
+    cmds:
+      - cmd: |
+          kubectl patch -n ncr-system service ncr \
+            --type='merge' \
+            -p '{"spec":{"selector":{"app": "harbor", "component": "nginx"}}}'

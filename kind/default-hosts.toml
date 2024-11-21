@@ -1,4 +1,5 @@
-server = "http://10.96.0.20"
+server = "http://10.96.0.20/v2/library"
+override_path = true
 
 # See https://github.com/containerd/containerd/issues/10027 for containerd bug that requires this workaround,
 # having an empty host tree here.

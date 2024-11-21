@@ -72,3 +72,9 @@ tasks:
       - cmd: kubectl wait --for=condition=Ready pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap --timeout=5m
     status:
       - kubectl wait --for=condition=Ready pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap --timeout=0
+
+  delete:
+    cmds:
+      - cmd: |
+          kubectl delete pods --namespace='{{.REGISTRY_NAMESPACE}}' \
+            -l app=in-cluster-registry,role=bootstrap

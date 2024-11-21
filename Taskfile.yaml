@@ -46,6 +46,9 @@ tasks:
       - task: harbor:create-postgresql-cluster
       - task: harbor:deploy
       - task: harbor:seed
+      - task: harbor:switch-to-harbor
+      - task: bootstrap-registry:delete
+
   cleanup:
     cmds:
       - cmd: rm -f {{.GIT_REPO_ROOT}}/bootstrap-registry/bootstrap-images.tar
