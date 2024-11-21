@@ -91,3 +91,15 @@ tasks:
             --values '{{.HARBOR_VALUES_TEMP}}'
     status:
       - helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor --output json | gojq -e '.version == "{{.HARBOR_CHART_VERSION}}" and .status == "deployed"'
+
+  seed:
+    vars:
+      HARBOR_ADMIN_PASSWORD:
+        sh: kubectl get secrets -n ncr-system harbor-core -ojson | gojq -r '.data["HARBOR_ADMIN_PASSWORD"] | @base64d'
+    cmds:
+      - cmd: |
+          kubectl exec -n ncr-system temporary-registry registry -- \
+            mindthegap push bundle --bundle /registry-data/bundle.tar \
+                                   --to-registry http://harbor:80/library \
+                                   --to-registry-username admin \
+                                   --to-registry-password '{{.HARBOR_ADMIN_PASSWORD}}'

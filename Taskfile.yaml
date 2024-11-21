@@ -45,6 +45,7 @@ tasks:
       - task: harbor:create-redis-cluster
       - task: harbor:create-postgresql-cluster
       - task: harbor:deploy
+      - task: harbor:seed
   cleanup:
     cmds:
       - cmd: rm -f {{.GIT_REPO_ROOT}}/bootstrap-registry/bootstrap-images.tar
