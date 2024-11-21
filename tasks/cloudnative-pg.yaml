@@ -18,4 +18,4 @@ tasks:
             --create-namespace \
             --wait --wait-for-jobs
     status:
-      - "helm get metadata --namespace cnpg-system cnpg | grep -qi '^version: {{.CLOUDNATIVEPG_CHART_VERSION}}$'"
+      - helm get metadata --namespace cnpg-system cnpg --output json | gojq -e '.version == "{{.CLOUDNATIVEPG_CHART_VERSION}}" and .status == "deployed"'

@@ -5,8 +5,14 @@ vars:
   REDIS_CHART_VERSION:
     sh: crane ls '{{.REDIS_CHART_OCI_URL}}' --omit-digest-tags | sort -rV | head -n1
   REDIS_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/keydb.yaml"
+
   HARBOR_DATABASE_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor-database.yaml"
   CLOUDNATIVEPG_CLUSTER_CHART_EXTRA_IMAGES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor-database-extra-images.txt"
+
+  HARBOR_CHART_REPO: https://helm.goharbor.io
+  HARBOR_CHART_VERSION:
+    sh: helm show chart --repo '{{.HARBOR_CHART_REPO}}' harbor | gojq --yaml-input -r '.version'
+  HARBOR_VALUES_TEMPLATE_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor.yaml.tmpl"
 
 tasks:
   create-s3-bucket:
@@ -15,15 +21,18 @@ tasks:
     status:
       - kubectl get bucketclaim -n '{{.REGISTRY_NAMESPACE}}' harbor-bc
       - kubectl get bucketaccess -n '{{.REGISTRY_NAMESPACE}}' harbor-ba
+
   create-ca:
     run: once
     cmds:
       - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/cert-issuer.yaml.tmpl' | kubectl apply --server-side -f -
     status:
       - kubectl get issuer -n '{{.REGISTRY_NAMESPACE}}' harbor-ca-issuer
+
   create-redis-cluster:
+    deps:
+      - create-ca
     cmds:
-      - task: create-ca
       - cmd: |
           helm upgrade --install harbor-keydb 'oci://{{.REDIS_CHART_OCI_URL}}' \
             --version '{{.REDIS_CHART_VERSION}}' \
@@ -32,10 +41,12 @@ tasks:
             --create-namespace \
             --wait --wait-for-jobs
     status:
-      - "helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb | grep -qi '^version: {{.REDIS_CHART_VERSION}}$'"
+      - helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb --output json | gojq -e '.version == "{{.REDIS_CHART_VERSION}}" and .status == "deployed"'
+
   create-postgresql-cluster:
+    deps:
+      - create-ca
     cmds:
-      - task: create-ca
       - cmd: |
           helm upgrade --install harbor-database cluster \
             --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' \
@@ -47,3 +58,36 @@ tasks:
       - cmd: kubectl wait --for=condition=Ready cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster --timeout 10m
     status:
       - kubectl wait --for=condition=Ready cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster --timeout 10m
+
+  deploy:
+    deps:
+      - create-ca
+    vars:
+      HARBOR_VALUES_TEMP:
+        sh: mktemp --tmpdir harbor-values-XXXXXXXX.yaml
+    env:
+      HARBOR_S3_BUCKET_NAME:
+        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.bucketName'
+      HARBOR_S3_ACCESS_KEY:
+        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessKeyID'
+      HARBOR_S3_SECRET_KEY:
+        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessSecretKey'
+      HARBOR_S3_ENDPOINT:
+        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.endpoint'
+      HARBOR_REDIS_PASSWORD:
+        sh: kubectl get secrets -n ncr-system harbor-keydb -ojson | gojq -r '.data["keydb-password"] | @base64d'
+      HARBOR_EXTERNAL_IP:
+        sh: kubectl get ipaddresspools -n metallb-system default -ojson | gojq -r '.spec.addresses[0] | scan("^(?:\\d+\\.){3}\\d+")'
+    cmds:
+      - cmd: envsubst -i '{{.HARBOR_VALUES_TEMPLATE_FILE}}' -o '{{.HARBOR_VALUES_TEMP}}'
+      - defer: rm -f '{{.HARBOR_VALUES_TEMP}}'
+      - cmd: |
+          helm upgrade --install harbor harbor \
+            --repo '{{.HARBOR_CHART_REPO}}' \
+            --version '{{.HARBOR_CHART_VERSION}}' \
+            --namespace '{{.REGISTRY_NAMESPACE}}' \
+            --create-namespace \
+            --wait --wait-for-jobs \
+            --values '{{.HARBOR_VALUES_TEMP}}'
+    status:
+      - helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor --output json | gojq -e '.version == "{{.HARBOR_CHART_VERSION}}" and .status == "deployed"'

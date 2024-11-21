@@ -1,0 +1,30 @@
+version: '3'
+
+vars:
+  METALLB_CHART_REPO: https://metallb.github.io/metallb/
+  METALLB_CHART_VERSION:
+    sh: helm show chart --repo '{{.METALLB_CHART_REPO}}' metallb | gojq --yaml-input -r '.version'
+
+tasks:
+  deploy:
+    cmds:
+      - cmd: |
+          helm upgrade --install metallb metallb \
+            --repo '{{.METALLB_CHART_REPO}}' \
+            --version '{{.METALLB_CHART_VERSION}}' \
+            --namespace metallb-system \
+            --create-namespace \
+            --wait --wait-for-jobs
+    status:
+      - helm get metadata --namespace metallb-system metallb --output json | gojq -e '.version == "{{.METALLB_CHART_VERSION}}" and .status == "deployed"'
+
+  configure-ipaddresspool:
+    vars:
+      KIND_DOCKER_NETWORK_PREFIX:
+        sh: docker network inspect kind -fjson | gojq -r '.[0].IPAM.Config[].Subnet | scan("^\\d+\\.\\d+")'
+    env:
+      METALLB_FIRST_IP: '{{.KIND_DOCKER_NETWORK_PREFIX}}.255.250'
+    cmds:
+      - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/metallb/ipaddresspool.yaml.tmpl' | kubectl apply --server-side -f -
+    status:
+      - kubectl get ipaddresspool -n metallb-system default

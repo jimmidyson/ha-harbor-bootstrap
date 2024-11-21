@@ -1,0 +1,74 @@
+version: '3'
+
+vars:
+  BOOTSTRAP_REGISTRY_MANIFESTS_DIR: "{{.GIT_REPO_ROOT}}/manifests/bootstrap-registry"
+  BOOTSTRAP_REGISTRY_IMAGES_FILE: "{{.GIT_REPO_ROOT}}/bootstrap-images.txt"
+  BOOTSTRAP_REGISTRY_IMAGES_BUNDLE: "{{.GIT_REPO_ROOT}}/bootstrap-images.tar"
+
+tasks:
+  create-namespace:
+    cmds:
+      - cmd: kubectl create namespace '{{.REGISTRY_NAMESPACE}}'
+    status:
+      - kubectl get namespace '{{.REGISTRY_NAMESPACE}}'
+
+  create-image-bundle:
+    cmds:
+      - cmd: |
+          helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cloudnative-pg --chart-version='{{.CLOUDNATIVEPG_CHART_VERSION}}' \
+            >'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.CLOUDNATIVEPG_CHART_REPO}}' cluster --chart-version='{{.CLOUDNATIVEPG_CLUSTER_CHART_VERSION}}' \
+            --values '{{.HARBOR_DATABASE_VALUES_FILE}}' \
+            --extra-images-file '{{.CLOUDNATIVEPG_CLUSTER_CHART_EXTRA_IMAGES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images 'oci://{{.REDIS_CHART_OCI_URL}}' --chart-version='{{.REDIS_CHART_VERSION}}' \
+            --values '{{.REDIS_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: helm list-images --repo '{{.CERTMANAGER_CHART_REPO}}' cert-manager --chart-version='{{.CERTMANAGER_CHART_VERSION}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.S3GW_CHART_REPO}}' s3gw --chart-version='{{.S3GW_VERSION}}' \
+            --values '{{.S3GW_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          kustomize build '{{.COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL}}' | \
+            gojq --yaml-input -r 'select(.kind == "Deployment").spec.template.spec.containers[].image' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.METALLB_CHART_REPO}}' metallb --chart-version='{{.METALLB_CHART_VERSION}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          helm list-images --repo '{{.HARBOR_CHART_REPO}}' harbor --chart-version='{{.HARBOR_CHART_VERSION}}' \
+            --values '{{.HARBOR_VALUES_TEMPLATE_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+      - cmd: |
+          docker container run -i -v "$(dirname '{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'):/tmp/bootstrap-images" \
+            --user "$(id -u):0" \
+            ghcr.io/mesosphere/mindthegap:"{{.MINDTHEGAP_VERSION}}" \
+            create bundle --images-file=/tmp/bootstrap-images/"$(basename '{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}')" \
+            --output-file=/tmp/bootstrap-images/"$(basename '{{.BOOTSTRAP_REGISTRY_IMAGES_BUNDLE}}')" \
+            --image-pull-concurrency=20 \
+            --overwrite
+    sources:
+      - '{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
+    generates:
+      - '{{.BOOTSTRAP_REGISTRY_IMAGES_BUNDLE}}'
+
+  deploy:
+    deps:
+      - create-namespace
+    vars:
+      BOOTSTRAP_REGISTRY_POD_MANIFEST_TEMPLATE: "{{.BOOTSTRAP_REGISTRY_MANIFESTS_DIR}}/pod.yaml.tmpl"
+      BOOTSTRAP_REGISTRY_POD_TEMP_MANIFEST:
+        sh: mktemp --tmpdir bootstrap-registry-pod-XXXXXXXX.yaml
+      BOOTSTRAP_REGISTRY_SEEDER_JOB_MANIFEST_TEMPLATE: "{{.BOOTSTRAP_REGISTRY_MANIFESTS_DIR}}/seeder-job.yaml.tmpl"
+      BOOTSTRAP_REGISTRY_SEEDER_JOB_TEMP_MANIFEST:
+        sh: mktemp --tmpdir bootstrap-registry-seeder-job-XXXXXXXX.yaml
+    env:
+      MINDTHEGAP_VERSION: '{{.MINDTHEGAP_VERSION}}'
+    cmds:
+      - cmd: envsubst -i '{{.BOOTSTRAP_REGISTRY_POD_MANIFEST_TEMPLATE}}' -o '{{.BOOTSTRAP_REGISTRY_POD_TEMP_MANIFEST}}'
+      - defer: rm -f '{{.BOOTSTRAP_REGISTRY_POD_TEMP_MANIFEST}}'
+      - cmd: kubectl apply --server-side --namespace='{{.REGISTRY_NAMESPACE}}' -f '{{.BOOTSTRAP_REGISTRY_POD_TEMP_MANIFEST}}'
+      - cmd: envsubst -i '{{.BOOTSTRAP_REGISTRY_SEEDER_JOB_MANIFEST_TEMPLATE}}' -o '{{.BOOTSTRAP_REGISTRY_SEEDER_JOB_TEMP_MANIFEST}}'
+      - defer: rm -f '{{.BOOTSTRAP_REGISTRY_SEEDER_JOB_TEMP_MANIFEST}}'
+      - cmd: kubectl apply --server-side --namespace='{{.REGISTRY_NAMESPACE}}' -f '{{.BOOTSTRAP_REGISTRY_SEEDER_JOB_TEMP_MANIFEST}}'
+      - defer: kubectl delete --namespace='{{.REGISTRY_NAMESPACE}}' -f '{{.BOOTSTRAP_REGISTRY_SEEDER_JOB_TEMP_MANIFEST}}'
+      - cmd: kubectl wait --for=condition=Ready pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap --timeout=5m
+    status:
+      - kubectl wait --for=condition=Ready pod --namespace='{{.REGISTRY_NAMESPACE}}' -l app=in-cluster-registry,role=bootstrap --timeout=0

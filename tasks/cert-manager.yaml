@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   CERTMANAGER_CHART_REPO: https://charts.jetstack.io
-  CERTMANAGER_VERSION:
+  CERTMANAGER_CHART_VERSION:
     sh: helm show chart --repo '{{.CERTMANAGER_CHART_REPO}}' cert-manager | gojq --yaml-input -r '.version'
   CERTMANAGER_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/cert-manager.yaml"
 
@@ -12,10 +12,10 @@ tasks:
       - cmd: |
           helm upgrade --install cert-manager cert-manager \
             --repo '{{.CERTMANAGER_CHART_REPO}}' \
-            --version '{{.CERTMANAGER_VERSION}}' \
+            --version '{{.CERTMANAGER_CHART_VERSION}}' \
             --namespace cert-manager \
             --create-namespace \
             --wait --wait-for-jobs \
             --values '{{.CERTMANAGER_VALUES_FILE}}'
     status:
-      - "helm get metadata --namespace cert-manager cert-manager | grep -qi '^version: {{.CERTMANAGER_VERSION}}$'"
+      - helm get metadata --namespace cert-manager cert-manager --output json | gojq -e '.version == "{{.CERTMANAGER_CHART_VERSION}}" and .status == "deployed"'

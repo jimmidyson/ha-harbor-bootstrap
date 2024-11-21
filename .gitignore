@@ -1,4 +1,4 @@
 kubeconfig
 .task/
-bootstrap-registry/*.tar
-bootstrap-registry/*.txt
+bootstrap-images.tar
+bootstrap-images.txt

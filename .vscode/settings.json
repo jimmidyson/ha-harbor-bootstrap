@@ -2,12 +2,12 @@
   "yaml.schemas": {
     "https://taskfile.dev/schema.json": [
       "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/kind.yaml",
-      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/registry.yaml",
-      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/cloudnativepg.yaml",
-      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/valkey.yaml",
+      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/bootstrap-registry.yaml",
+      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/cloudnative-pg.yaml",
       "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/cert-manager.yaml",
       "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/s3gw.yaml",
-      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/harbor.yaml"
+      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/harbor.yaml",
+      "file:///Users/jimmi.dyson/go/src/github.com/jimmidyson/ha-harbor-bootstrap/tasks/metallb.yaml"
     ]
   }
 }

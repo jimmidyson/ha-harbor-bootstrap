@@ -7,8 +7,9 @@ set:
 
 includes:
   kind: ./tasks/kind.yaml
-  registry: ./tasks/registry.yaml
-  cloudnativepg: ./tasks/cloudnativepg.yaml
+  bootstrap-registry: ./tasks/bootstrap-registry.yaml
+  metallb: ./tasks/metallb.yaml
+  cloudnative-pg: ./tasks/cloudnative-pg.yaml
   cert-manager: ./tasks/cert-manager.yaml
   s3gw: ./tasks/s3gw.yaml
   harbor: ./tasks/harbor.yaml
@@ -19,8 +20,8 @@ vars:
   GIT_REPO_NAME:
     sh: basename {{.GIT_REPO_ROOT}}
   KIND_CLUSTER_NAME: "{{.GIT_REPO_NAME}}"
-  LATEST_MINDTHEGAP_VERSION:
-    sh: gh release list --repo mesosphere/mindthegap --limit 1 --json name --jq '.[0].name'
+  MINDTHEGAP_VERSION:
+    sh: gh release view --repo mesosphere/mindthegap --json tagName --jq '.tagName'
   REGISTRY_NAMESPACE: ncr-system
 
 env:
@@ -31,17 +32,20 @@ env:
 tasks:
   run-demo:
     cmds:
-      - task: registry:create-bootstrap-image-bundle
+      - task: bootstrap-registry:create-image-bundle
       - task: kind:create
-      - task: registry:deploy-bootstrap-registry
+      - task: bootstrap-registry:deploy
+      - task: metallb:deploy
+      - task: metallb:configure-ipaddresspool
       - task: cert-manager:deploy
-      - task: cloudnativepg:deploy-operator
+      - task: cloudnative-pg:deploy-operator
       - task: s3gw:deploy
       - task: s3gw:create-cosi-bucketclass
       - task: harbor:create-s3-bucket
-      - task: harbor:create-ca
       - task: harbor:create-redis-cluster
       - task: harbor:create-postgresql-cluster
+      - task: harbor:deploy
   cleanup:
     cmds:
+      - cmd: rm -f {{.GIT_REPO_ROOT}}/bootstrap-registry/bootstrap-images.tar
       - task: kind:delete

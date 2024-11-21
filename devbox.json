@@ -13,6 +13,7 @@
     "go-task@latest",
     "gojq@latest",
     "kind@latest",
+    "kubectl@latest",
     "kustomize@latest",
     "path:./hack/flakes#helm-with-plugins"
   ]
