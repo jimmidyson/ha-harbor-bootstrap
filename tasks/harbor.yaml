@@ -11,13 +11,17 @@ vars:
 
   HARBOR_CHART_REPO: https://helm.goharbor.io
   HARBOR_CHART_VERSION:
-    sh: helm show chart --repo '{{.HARBOR_CHART_REPO}}' harbor | gojq --yaml-input -r '.version'
+    sh: |
+      helm show chart --repo '{{.HARBOR_CHART_REPO}}' harbor | \
+        gojq --yaml-input -r '.version'
   HARBOR_VALUES_TEMPLATE_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor.yaml.tmpl"
 
 tasks:
   create-s3-bucket:
     cmds:
-      - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/s3-bucket.yaml.tmpl' | kubectl apply --server-side -f -
+      - cmd: |
+          envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/s3-bucket.yaml.tmpl' | \
+            kubectl apply --server-side -f -
     status:
       - kubectl get bucketclaim -n '{{.REGISTRY_NAMESPACE}}' harbor-bc
       - kubectl get bucketaccess -n '{{.REGISTRY_NAMESPACE}}' harbor-ba
@@ -25,7 +29,9 @@ tasks:
   create-ca:
     run: once
     cmds:
-      - cmd: envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/cert-issuer.yaml.tmpl' | kubectl apply --server-side -f -
+      - cmd: |
+          envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/cert-issuer.yaml.tmpl' | \
+            kubectl apply --server-side -f -
     status:
       - kubectl get issuer -n '{{.REGISTRY_NAMESPACE}}' harbor-ca-issuer
 
@@ -41,7 +47,9 @@ tasks:
             --create-namespace \
             --wait --wait-for-jobs
     status:
-      - helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb --output json | gojq -e '.version == "{{.REDIS_CHART_VERSION}}" and .status == "deployed"'
+      - |
+        helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb --output json | \
+          gojq -e '.version == "{{.REDIS_CHART_VERSION}}" and .status == "deployed"'
 
   create-postgresql-cluster:
     deps:
@@ -55,9 +63,13 @@ tasks:
             --create-namespace \
             --wait --wait-for-jobs \
             --values '{{.HARBOR_DATABASE_VALUES_FILE}}'
-      - cmd: kubectl wait --for=condition=Ready cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster --timeout 10m
+      - cmd: |
+          kubectl wait cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
+            --for=condition=Ready --timeout 10m
     status:
-      - kubectl wait --for=condition=Ready cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster --timeout 10m
+      - |
+        kubectl wait cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
+          --for=condition=Ready  --timeout 10m
 
   deploy:
     deps:
@@ -108,6 +120,8 @@ tasks:
             --wait --wait-for-jobs \
             --values '{{.HARBOR_VALUES_TEMP}}'
     status:
+      - |
+        helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor --output json | \
           gojq -e '.version == "{{.HARBOR_CHART_VERSION}}" and .status == "deployed"'
 
   seed:
