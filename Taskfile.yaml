@@ -23,10 +23,10 @@ vars:
   MINDTHEGAP_VERSION:
     sh: gh release view --repo mesosphere/mindthegap --json tagName --jq '.tagName'
   REGISTRY_NAMESPACE: ncr-system
+  KUBECONFIG: "{{.GIT_REPO_ROOT}}/kubeconfig"
 
 env:
-  KUBECONFIG:
-    sh: echo "$(git rev-parse --show-toplevel)/kubeconfig"
+  KUBECONFIG: "{{.KUBECONFIG}}"
   REGISTRY_NAMESPACE: "{{.REGISTRY_NAMESPACE}}"
 
 tasks:

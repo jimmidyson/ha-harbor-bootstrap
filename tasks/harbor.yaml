@@ -67,17 +67,35 @@ tasks:
         sh: mktemp --tmpdir harbor-values-XXXXXXXX.yaml
     env:
       HARBOR_S3_BUCKET_NAME:
-        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.bucketName'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-s3-secret -ojson | \
+              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.bucketName'
       HARBOR_S3_ACCESS_KEY:
-        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessKeyID'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-s3-secret -ojson | \
+              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessKeyID'
       HARBOR_S3_SECRET_KEY:
-        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessSecretKey'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-s3-secret -ojson | \
+              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessSecretKey'
       HARBOR_S3_ENDPOINT:
-        sh: kubectl get secrets -n ncr-system harbor-s3-secret -ojson | gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.endpoint'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-s3-secret -ojson | \
+              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.endpoint'
       HARBOR_REDIS_PASSWORD:
-        sh: kubectl get secrets -n ncr-system harbor-keydb -ojson | gojq -r '.data["keydb-password"] | @base64d'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-keydb -ojson | \
+              gojq -r '.data["keydb-password"] | @base64d'
       HARBOR_EXTERNAL_IP:
-        sh: kubectl get ipaddresspools -n metallb-system default -ojson | gojq -r '.spec.addresses[0] | scan("^(?:\\d+\\.){3}\\d+")'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get ipaddresspools -n metallb-system default -ojson | \
+              gojq -r '.spec.addresses[0] | scan("^(?:\\d+\\.){3}\\d+")'
     cmds:
       - cmd: envsubst -i '{{.HARBOR_VALUES_TEMPLATE_FILE}}' -o '{{.HARBOR_VALUES_TEMP}}'
       - defer: rm -f '{{.HARBOR_VALUES_TEMP}}'
@@ -90,12 +108,15 @@ tasks:
             --wait --wait-for-jobs \
             --values '{{.HARBOR_VALUES_TEMP}}'
     status:
-      - helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor --output json | gojq -e '.version == "{{.HARBOR_CHART_VERSION}}" and .status == "deployed"'
+          gojq -e '.version == "{{.HARBOR_CHART_VERSION}}" and .status == "deployed"'
 
   seed:
     vars:
       HARBOR_ADMIN_PASSWORD:
-        sh: kubectl get secrets -n ncr-system harbor-core -ojson | gojq -r '.data["HARBOR_ADMIN_PASSWORD"] | @base64d'
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-core -ojson | \
+              gojq -r '.data["HARBOR_ADMIN_PASSWORD"] | @base64d'
     cmds:
       - cmd: |
           kubectl exec -n ncr-system temporary-registry registry -- \
