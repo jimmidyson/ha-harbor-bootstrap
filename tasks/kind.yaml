@@ -25,14 +25,21 @@ tasks:
             -f "${KIND_FILES_DIR}/node-image.dockerfile" \
             "${KIND_FILES_DIR}"
       - cmd: kind create cluster --name '{{.KIND_CLUSTER_NAME}}' --config '{{.KIND_CONFIG_FILE}}'
+      - cmd: |
+          kubectl -n local-path-storage patch configmap local-path-config \
+            -p '{"data": {"config.json": "{\"sharedFileSystemPath\": \"/var/local-path-provisioner\"}"}}'
     status:
       - kind get clusters | grep -q '^{{.KIND_CLUSTER_NAME}}$'
     preconditions:
       - sh: docker version -fjson | gojq -e '.Server.Arch == "amd64"'
         msg: "This task requires Docker to be installed and running on an amd64 architecture."
+
   delete:
     cmds:
       - cmd: kind delete cluster --name '{{.KIND_CLUSTER_NAME}}'
+    status:
+      - test -z "$(kind get clusters 2>/dev/null | grep '^{{.KIND_CLUSTER_NAME}}$')"
+
   kubeconfig:
     silent: true
     cmds:

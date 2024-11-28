@@ -44,9 +44,6 @@ metallb:deploy
 metallb:configure-ipaddresspool
 cert-manager:deploy
 cloudnative-pg:deploy-operator
-s3gw:deploy
-s3gw:create-cosi-bucketclass
-harbor:create-s3-bucket
 harbor:create-redis-cluster
 harbor:create-postgresql-cluster
 harbor:deploy

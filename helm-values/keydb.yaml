@@ -7,26 +7,10 @@ tls:
       existingIssuerKind: Issuer
 master:
   replicaCount: 3
-  livenessProbe:
-    initialDelaySeconds: 0
-  readinessProbe:
-    initialDelaySeconds: 0
-    timeoutSeconds: 6
   startupProbe:
     enabled: true
-    initialDelaySeconds: 0
-    failureThreshold: 30
 replica:
   replicaCount: 3
   activeReplica: true
-  livenessProbe:
-    initialDelaySeconds: 0
-    timeoutSeconds: 11
-  readinessProbe:
-    initialDelaySeconds: 0
-    timeoutSeconds: 11
   startupProbe:
     enabled: true
-    initialDelaySeconds: 0
-    failureThreshold: 30
-

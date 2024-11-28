@@ -7,15 +7,32 @@ expose:
 
 externalURL: "http://harbor.${HARBOR_EXTERNAL_IP}.sslip.io"
 
+nginx:
+  replicas: 3
+portal:
+  replicas: 3
+core:
+  replicas: 3
+jobservice:
+  replicas: 3
+registry:
+  replicas: 3
+
+
 persistence:
+  persistentVolumeClaim:
+    registry:
+      accessMode: ReadWriteMany
+      size: 1Gi
+    jobservice:
+      jobLog:
+        accessMode: ReadWriteMany
+        size: 1Gi
+    trivy:
+      accessMode: ReadWriteMany
   imageChartStorage:
     disableredirect: true
-    type: s3
-    s3:
-      bucket: "${HARBOR_S3_BUCKET_NAME}"
-      accesskey: "${HARBOR_S3_ACCESS_KEY}"
-      secretkey: "${HARBOR_S3_SECRET_KEY}"
-      regionendpoint: "${HARBOR_S3_ENDPOINT}"
+    type: filesystem
 
 database:
   type: external

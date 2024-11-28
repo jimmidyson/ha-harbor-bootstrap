@@ -2,3 +2,4 @@ kubeconfig
 .task/
 bootstrap-images.tar
 bootstrap-images.txt
+mindthegap-images.txt

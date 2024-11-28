@@ -1,4 +1,10 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: "${REGISTRY_NAMESPACE}"
+  name: registry
+---
+apiVersion: v1
 kind: Pod
 metadata:
   namespace: "${REGISTRY_NAMESPACE}"
@@ -7,6 +13,7 @@ metadata:
     app: in-cluster-registry
     role: bootstrap
 spec:
+  serviceAccountName: registry
   tolerations:
     - operator: Exists
   affinity:

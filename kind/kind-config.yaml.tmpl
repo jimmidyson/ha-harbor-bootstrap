@@ -8,11 +8,6 @@ nodes:
     containerPath: /etc/containerd/certs.d/_default/hosts.toml
   - hostPath: ${BOOTSTRAP_REGISTRY_DIR}/bootstrap-images.tar
     containerPath: /registry-data/bundle.tar
-- role: worker
-  image: ghcr.io/mesosphere/kind-node:${LATEST_KIND_IMAGE_TAG}-with-mindthegap
-  extraMounts:
-  - hostPath: ${KIND_FILES_DIR}/default-hosts.toml
-    containerPath: /etc/containerd/certs.d/_default/hosts.toml
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry]

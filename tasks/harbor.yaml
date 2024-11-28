@@ -17,15 +17,6 @@ vars:
   HARBOR_VALUES_TEMPLATE_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor.yaml.tmpl"
 
 tasks:
-  create-s3-bucket:
-    cmds:
-      - cmd: |
-          envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/s3-bucket.yaml.tmpl' | \
-            kubectl apply --server-side -f -
-    status:
-      - kubectl get bucketclaim -n '{{.REGISTRY_NAMESPACE}}' harbor-bc
-      - kubectl get bucketaccess -n '{{.REGISTRY_NAMESPACE}}' harbor-ba
-
   create-ca:
     run: once
     cmds:
@@ -78,26 +69,6 @@ tasks:
       HARBOR_VALUES_TEMP:
         sh: mktemp --tmpdir harbor-values-XXXXXXXX.yaml
     env:
-      HARBOR_S3_BUCKET_NAME:
-        sh: |
-          kubectl --kubeconfig='{{.KUBECONFIG}}' \
-            get secrets -n ncr-system harbor-s3-secret -ojson | \
-              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.bucketName'
-      HARBOR_S3_ACCESS_KEY:
-        sh: |
-          kubectl --kubeconfig='{{.KUBECONFIG}}' \
-            get secrets -n ncr-system harbor-s3-secret -ojson | \
-              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessKeyID'
-      HARBOR_S3_SECRET_KEY:
-        sh: |
-          kubectl --kubeconfig='{{.KUBECONFIG}}' \
-            get secrets -n ncr-system harbor-s3-secret -ojson | \
-              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.accessSecretKey'
-      HARBOR_S3_ENDPOINT:
-        sh: |
-          kubectl --kubeconfig='{{.KUBECONFIG}}' \
-            get secrets -n ncr-system harbor-s3-secret -ojson | \
-              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.endpoint'
       HARBOR_REDIS_PASSWORD:
         sh: |
           kubectl --kubeconfig='{{.KUBECONFIG}}' \

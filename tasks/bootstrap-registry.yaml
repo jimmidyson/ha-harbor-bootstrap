@@ -9,6 +9,7 @@ tasks:
   create-namespace:
     cmds:
       - cmd: kubectl create namespace '{{.REGISTRY_NAMESPACE}}'
+      - cmd: kubectl wait --for='jsonpath={.status.phase}=Active' namespace '{{.REGISTRY_NAMESPACE}}'
     status:
       - kubectl get namespace '{{.REGISTRY_NAMESPACE}}'
 
@@ -25,12 +26,6 @@ tasks:
           helm list-images 'oci://{{.REDIS_CHART_OCI_URL}}' --chart-version='{{.REDIS_CHART_VERSION}}' \
             --values '{{.REDIS_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: helm list-images --repo '{{.CERTMANAGER_CHART_REPO}}' cert-manager --chart-version='{{.CERTMANAGER_CHART_VERSION}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
-      - cmd: |
-          helm list-images --repo '{{.S3GW_CHART_REPO}}' s3gw --chart-version='{{.S3GW_VERSION}}' \
-            --values '{{.S3GW_VALUES_FILE}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
-      - cmd: |
-          kustomize build '{{.COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL}}' | \
-            gojq --yaml-input -r 'select(.kind == "Deployment").spec.template.spec.containers[].image' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: |
           helm list-images --repo '{{.METALLB_CHART_REPO}}' metallb --chart-version='{{.METALLB_CHART_VERSION}}' >>'{{.BOOTSTRAP_REGISTRY_IMAGES_FILE}}'
       - cmd: |
