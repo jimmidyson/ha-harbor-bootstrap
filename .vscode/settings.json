@@ -1,13 +1,13 @@
 {
   "yaml.schemas": {
     "https://taskfile.dev/schema.json": [
-      "tasks/kind.yaml",
       "tasks/bootstrap-registry.yaml",
-      "tasks/cloudnative-pg.yaml",
       "tasks/cert-manager.yaml",
+      "tasks/cloudnative-pg.yaml",
       "tasks/harbor.yaml",
+      "tasks/kind.yaml",
       "tasks/metallb.yaml",
-      "tasks/kind.yaml"
+      "tasks/s3gw.yaml"
     ]
   }
 }

@@ -11,6 +11,7 @@ includes:
   metallb: ./tasks/metallb.yaml
   cloudnative-pg: ./tasks/cloudnative-pg.yaml
   cert-manager: ./tasks/cert-manager.yaml
+  s3gw: ./tasks/s3gw.yaml
   harbor: ./tasks/harbor.yaml
 
 vars:
@@ -38,6 +39,9 @@ tasks:
       - task: metallb:configure-ipaddresspool
       - task: cert-manager:deploy
       - task: cloudnative-pg:deploy-operator
+      - task: s3gw:deploy
+      - task: s3gw:create-cosi-bucketclass
+      - task: harbor:create-s3-bucket
       - task: harbor:create-redis-cluster
       - task: harbor:create-postgresql-cluster
       - task: harbor:deploy

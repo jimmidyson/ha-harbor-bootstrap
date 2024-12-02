@@ -25,9 +25,6 @@ tasks:
             -f "${KIND_FILES_DIR}/node-image.dockerfile" \
             "${KIND_FILES_DIR}"
       - cmd: kind create cluster --name '{{.KIND_CLUSTER_NAME}}' --config '{{.KIND_CONFIG_FILE}}'
-      - cmd: |
-          kubectl -n local-path-storage patch configmap local-path-config \
-            -p '{"data": {"config.json": "{\"sharedFileSystemPath\": \"/var/local-path-provisioner\"}"}}'
     status:
       - kind get clusters | grep -q '^{{.KIND_CLUSTER_NAME}}$'
     preconditions:
