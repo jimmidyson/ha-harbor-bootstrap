@@ -6,15 +6,17 @@ expose:
 externalURL: "http://harbor.10.23.129.200.sslip.io"
 
 nginx:
-  replicas: 1
+  replicas: 2
 portal:
-  replicas: 1
+  replicas: 3
 core:
-  replicas: 1
+  replicas: 3
 registry:
-  replicas: 1
+  replicas: 3
 # TODO how to configure HA jobservice - ReadWriteMany PVC required perhaps?
 jobservice:
+  replicas: 1
+trivy:
   replicas: 1
 
 persistence:
