@@ -40,7 +40,8 @@ database:
 redis:
   type: external
   external:
-    addr: "harbor-keydb-master:6379"
+    addr: "harbor-valkey:26379"
+    sentinelMasterSet: harbor
     # The "coreDatabaseIndex" must be "0" as the library Harbor
     # used doesn't support configuring it
     # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional

@@ -10,6 +10,9 @@
       "tasks/metallb.yaml",
       "tasks/ntnx-objects.yaml",
       "tasks/s3gw.yaml"
+    ],
+    "https://raw.githubusercontent.com/bitnami/charts/refs/heads/main/bitnami/valkey/values.schema.json": [
+      "helm-values/valkey.yaml"
     ]
   }
 }

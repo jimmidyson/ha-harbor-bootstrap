@@ -1,10 +1,10 @@
 version: '3'
 
 vars:
-  REDIS_CHART_OCI_URL: registry-1.docker.io/bitnamicharts/keydb
+  REDIS_CHART_OCI_URL: registry-1.docker.io/bitnamicharts/valkey
   REDIS_CHART_VERSION:
     sh: crane ls '{{.REDIS_CHART_OCI_URL}}' --omit-digest-tags | sort -rV | head -n1
-  REDIS_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/keydb.yaml"
+  REDIS_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/valkey.yaml"
 
   HARBOR_DATABASE_VALUES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor-database.yaml"
   CLOUDNATIVEPG_CLUSTER_CHART_EXTRA_IMAGES_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor-database-extra-images.txt"
@@ -51,11 +51,9 @@ tasks:
       - kubectl get issuer -n '{{.REGISTRY_NAMESPACE}}' harbor-ca-issuer
 
   create-redis-cluster:
-    deps:
-      - create-ca
     cmds:
       - cmd: |
-          helm upgrade --install harbor-keydb 'oci://{{.REDIS_CHART_OCI_URL}}' \
+          helm upgrade --install harbor-valkey 'oci://{{.REDIS_CHART_OCI_URL}}' \
             --version '{{.REDIS_CHART_VERSION}}' \
             --values '{{.REDIS_VALUES_FILE}}' \
             --namespace '{{.REGISTRY_NAMESPACE}}' \
@@ -65,7 +63,7 @@ tasks:
       - '{{.REDIS_VALUES_FILE}}'
     status:
       - |
-        helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb --output json | \
+        helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-valkey --output json | \
           gojq -e '.version == "{{.REDIS_CHART_VERSION}}" and .status == "deployed"'
 
   create-postgresql-cluster:
@@ -123,8 +121,8 @@ tasks:
       HARBOR_REDIS_PASSWORD:
         sh: |
           kubectl --kubeconfig='{{.KUBECONFIG}}' \
-            get secrets -n ncr-system harbor-keydb -ojson | \
-              gojq -r '.data["keydb-password"] | @base64d'
+            get secrets -n ncr-system harbor-valkey -ojson | \
+              gojq -r '.data["valkey-password"] | @base64d'
       HARBOR_EXTERNAL_IP:
         sh: |
           kubectl --kubeconfig='{{.KUBECONFIG}}' \

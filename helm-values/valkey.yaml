@@ -1,0 +1,6 @@
+sentinel:
+  enabled: true
+  primarySet: harbor
+auth:
+  enabled: false
+  sentinel: false
