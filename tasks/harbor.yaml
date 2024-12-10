@@ -17,7 +17,22 @@ vars:
   HARBOR_VALUES_TEMPLATE_FILE: "{{.GIT_REPO_ROOT}}/helm-values/harbor.yaml.tmpl"
 
 tasks:
-  create-s3-bucket:
+  create-s3gw-bucket:
+    env:
+      BUCKETCLASS: default-bcc
+      BUCKETACCESSCLASS: default-bac
+    cmds:
+      - cmd: |
+          envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/s3-bucket.yaml.tmpl' | \
+            kubectl apply --server-side -f -
+    status:
+      - kubectl get bucketclaim -n '{{.REGISTRY_NAMESPACE}}' harbor-bc
+      - kubectl get bucketaccess -n '{{.REGISTRY_NAMESPACE}}' harbor-ba
+
+  create-ntnx-bucket:
+    env:
+      BUCKETCLASS: ntnx-bucketclass
+      BUCKETACCESSCLASS: ntnx-bucketaccessclass
     cmds:
       - cmd: |
           envsubst -i '{{.GIT_REPO_ROOT}}/manifests/harbor/s3-bucket.yaml.tmpl' | \
@@ -46,14 +61,14 @@ tasks:
             --namespace '{{.REGISTRY_NAMESPACE}}' \
             --create-namespace \
             --wait --wait-for-jobs
+    sources:
+      - '{{.REDIS_VALUES_FILE}}'
     status:
       - |
         helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor-keydb --output json | \
           gojq -e '.version == "{{.REDIS_CHART_VERSION}}" and .status == "deployed"'
 
   create-postgresql-cluster:
-    deps:
-      - create-ca
     cmds:
       - cmd: |
           helm upgrade --install harbor-database cluster \
@@ -64,12 +79,14 @@ tasks:
             --wait --wait-for-jobs \
             --values '{{.HARBOR_DATABASE_VALUES_FILE}}'
       - cmd: |
-          kubectl wait cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
+          kubectl wait cluster.postgresql.cnpg.io --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
             --for=condition=Ready --timeout 10m
+    sources:
+      - '{{.HARBOR_DATABASE_VALUES_FILE}}'
     status:
       - |
-        kubectl wait cluster --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
-          --for=condition=Ready  --timeout 10m
+        kubectl wait cluster.postgresql.cnpg.io --namespace '{{.REGISTRY_NAMESPACE}}' harbor-database-cluster \
+          --for=condition=Ready --timeout 0
 
   deploy:
     deps:
@@ -98,6 +115,11 @@ tasks:
           kubectl --kubeconfig='{{.KUBECONFIG}}' \
             get secrets -n ncr-system harbor-s3-secret -ojson | \
               gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.endpoint'
+      HARBOR_S3_REGION:
+        sh: |
+          kubectl --kubeconfig='{{.KUBECONFIG}}' \
+            get secrets -n ncr-system harbor-s3-secret -ojson | \
+              gojq -r '.data.BucketInfo | @base64d | fromjson | .spec.secretS3.region'
       HARBOR_REDIS_PASSWORD:
         sh: |
           kubectl --kubeconfig='{{.KUBECONFIG}}' \
@@ -119,6 +141,10 @@ tasks:
             --create-namespace \
             --wait --wait-for-jobs \
             --values '{{.HARBOR_VALUES_TEMP}}'
+
+    sources:
+      - '{{.HARBOR_VALUES_TEMPLATE_FILE}}'
+
     status:
       - |
         helm get metadata --namespace '{{.REGISTRY_NAMESPACE}}' harbor --output json | \

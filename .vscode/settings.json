@@ -4,9 +4,11 @@
       "tasks/bootstrap-registry.yaml",
       "tasks/cert-manager.yaml",
       "tasks/cloudnative-pg.yaml",
+      "tasks/cosi.yaml",
       "tasks/harbor.yaml",
       "tasks/kind.yaml",
       "tasks/metallb.yaml",
+      "tasks/ntnx-objects.yaml",
       "tasks/s3gw.yaml"
     ]
   }

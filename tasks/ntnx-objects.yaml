@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  create-cosi-bucketclass:
+    cmds:
+      - cmd: kubectl apply --server-side -f '{{.GIT_REPO_ROOT}}/manifests/ntnx-objects/bucketclass.yaml'
+    status:
+      - kubectl get bucketclass ntnx-bucketclass
+      - kubectl get bucketaccessclass ntnx-bucketaccessclass

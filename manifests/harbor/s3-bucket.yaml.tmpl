@@ -4,7 +4,7 @@ metadata:
   namespace: ${REGISTRY_NAMESPACE}
   name: harbor-bc
 spec:
-  bucketClassName: default-bcc
+  bucketClassName: ${BUCKETCLASS}
   protocols:
     - s3
 ---
@@ -14,7 +14,7 @@ metadata:
   namespace: ${REGISTRY_NAMESPACE}
   name: harbor-ba
 spec:
-  bucketAccessClassName: default-bac
+  bucketAccessClassName: ${BUCKETACCESSCLASS}
   bucketClaimName: harbor-bc
   credentialsSecretName: harbor-s3-secret
   protocol: s3

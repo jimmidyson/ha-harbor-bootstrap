@@ -1,0 +1,10 @@
+version: '3'
+
+vars:
+  COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL: github.com/kubernetes-sigs/container-object-storage-interface-controller
+
+tasks:
+  deploy:
+    cmds:
+      - cmd: kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-api
+      - cmd: kubectl create -k '{{.COSI_STORAGE_CONTROLLER_KUSTOMIZE_URL}}'

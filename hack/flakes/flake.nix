@@ -45,6 +45,7 @@
           helm-with-plugins = wrapHelm kubernetes-helm {
             plugins = [
               helm-list-images
+              kubernetes-helmPlugins.helm-diff
             ];
           };
         };

@@ -1,20 +1,18 @@
 expose:
   type: loadBalancer
-  loadBalancer:
-    IP: "${HARBOR_EXTERNAL_IP}"
   tls:
     enabled: false
 
-externalURL: "http://harbor.${HARBOR_EXTERNAL_IP}.sslip.io"
+externalURL: "http://harbor.10.23.129.200.sslip.io"
 
 nginx:
-  replicas: 2
+  replicas: 1
 portal:
-  replicas: 3
+  replicas: 1
 core:
-  replicas: 3
+  replicas: 1
 registry:
-  replicas: 3
+  replicas: 1
 # TODO how to configure HA jobservice - ReadWriteMany PVC required perhaps?
 jobservice:
   replicas: 1
@@ -28,6 +26,7 @@ persistence:
       accesskey: "${HARBOR_S3_ACCESS_KEY}"
       secretkey: "${HARBOR_S3_SECRET_KEY}"
       regionendpoint: "${HARBOR_S3_ENDPOINT}"
+      region: "${HARBOR_S3_REGION}"
 
 database:
   type: external
@@ -41,7 +40,7 @@ database:
 redis:
   type: external
   external:
-    addr: "harbor-keydb-replica:6379"
+    addr: "harbor-keydb-master:6379"
     # The "coreDatabaseIndex" must be "0" as the library Harbor
     # used doesn't support configuring it
     # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional

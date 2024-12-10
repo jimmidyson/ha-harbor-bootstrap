@@ -1,0 +1,13 @@
+kind: BucketClass
+apiVersion: objectstorage.k8s.io/v1alpha1
+metadata:
+  name: ntnx-bucketclass
+driverName: ntnx.objectstorage.k8s.io
+deletionPolicy: Delete
+---
+kind: BucketAccessClass
+apiVersion: objectstorage.k8s.io/v1alpha1
+metadata:
+  name: ntnx-bucketaccessclass
+driverName: ntnx.objectstorage.k8s.io
+authenticationType: KEY
